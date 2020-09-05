@@ -1,0 +1,18 @@
+Package: observe
+Type: Package
+Title: Tools for Observational Medical Research
+Version: 0.0.1
+Author: Michael Zietz
+Maintainer: Michael Zietz <michael.zietz@gmail.com>
+Description: Parallel and branching analyses using different conditions.
+    Seamlessly work with multiple conditions, analyses, formulae, matching, 
+    and preprocessing conditions. Tools to keep combinatorial details hidden.
+License: Full Copyright (until I pick an open source license)
+Encoding: UTF-8
+LazyData: true
+Imports: 
+    cmprsk,
+    dplyr,
+    purrr,
+    rlang
+RoxygenNote: 7.1.1
