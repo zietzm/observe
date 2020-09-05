@@ -8,9 +8,16 @@ process_dots <- function(...) {
 
 #' @export
 process_formula <- function(formula) {
-  processed <- process_dots(formula)
-  if (plyr::is.formula(formula)) {
-    processed <- purrr::set_names(processed, c('formula'))
+  if (inherits(formula, 'list')) {
+    n_named <- 0
+    for (i in 1:length(formula)) {
+      if (names(formula)[[i]] == '') {
+        n_named <- n_named + 1
+        names(formula)[[i]] <- paste('formula', n_named, sep = '_')
+      }
+    }
+  } else {
+    formula <- list('formula' = formula)
   }
-  processed
+  formula
 }

@@ -4,16 +4,16 @@
 \alias{analysis_plan}
 \title{analysis_plan: This function}
 \usage{
-analysis_plan(.data, ...)
+analysis_plan(.data, .name)
 }
 \arguments{
 \item{.data}{analysis data}
 
-\item{...}{other arguments}
+\item{.name}{starting name for the data}
 }
 \description{
 A description of analysis_plan
 }
 \details{
-A details of analysis_plan
+Details of analysis_plan
 }

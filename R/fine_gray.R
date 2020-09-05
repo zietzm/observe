@@ -1,30 +1,33 @@
+#' Fine-Gray survival model with competing risks
+#'
 #' @export
 fit_fine_gray <- function(x, ...) {
   UseMethod("fit_fine_gray")
 }
 
 #' @export
-fit_fine_gray.analysis_plan <- function(x, .formula, primary_outcome = NULL,
+fit_fine_gray.analysis_plan <- function(.plan, .formula, primary_outcome = NULL,
                                         censoring_outcome = NULL) {
   # Accept either a single formula or a named list of formulae.
-  .formulae <- process_formula(.formula)
+  formulae <- process_formula(.formula)
 
   # Fit the specified models
-  models_to_fit <- purrr::cross2(.formulae, x$analysis_data)
+  models_to_fit <- purrr::cross2(formulae, .plan$data)
   fit_objects <- purrr::map(models_to_fit, ~fit_fine_gray.formula(
-    .x[[1]], x$preprocessing(.x[[2]]), primary_outcome, censoring_outcome))
+    .x[[1]], .plan$prep(.x[[2]]), primary_outcome, censoring_outcome))
 
   # Format corresponding names
-  names_first <- paste(x$analysis_data_meta, '->Fine-Gray<', sep = '')
-  names_last <- paste(names(.formulae), '>', sep = '')
+  names_first <- paste(.plan$ids, '->Fine-Gray<', sep = '')
+  names_last <- paste(names(formulae), '>', sep = '')
   model_names <- purrr::cross2(names_first, names_last)
   model_names <- purrr::pmap(model_names, ~paste(.x, collapse = ''))
   model_names <- purrr::flatten(model_names)
 
-  # Build resulting analysis_result object
-  analysis_result(fit_objects, model_names)
-}
+  meta <- paste(.plan$meta, paste(names(formulae), collapse = '/'), sep = '->Fine-Gray:')
 
+  # Build resulting analysis_fit object
+  analysis_fit(fit_objects, model_names, meta)
+}
 
 #' @export
 fit_fine_gray.formula <- function(.formula, .data, primary_outcome = NULL,
@@ -54,6 +57,8 @@ fit_fine_gray.formula <- function(.formula, .data, primary_outcome = NULL,
 
   # Add the fit formula for use with predict method
   output[['formula']] <- .formula
+  class(output) <- 'fine_gray'
+  # TODO: This should probably return an analysis fit object as well
   output
 }
 
@@ -63,3 +68,20 @@ fit_fine_gray.character <- function(.formula, .data, primary_outcome,
   .formula <- as.formula(.formula)
   fit_fine_gray.formula(.formula, .data, primary_outcome, censoring_outcome)
 }
+
+#' @export
+predict.fine_gray <- function(.fit, newdata) {
+  # TODO: Tests here
+  covariates <- model.matrix(.fit$formula, newdata)[, -1]
+  preds <- predict(fit, cov1 = covariates)
+  preds <- matrix(preds, nrow(preds))
+  preds[nrow(preds), -1]
+}
+
+
+
+
+
+
+
+
