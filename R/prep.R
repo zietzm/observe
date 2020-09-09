@@ -11,8 +11,9 @@ prep_bootstrap.analysis_plan <- function(.plan, n, inclue_original = TRUE) {
     .plan$data, ~rsample::bootstraps(.x, times = n, apparent = inclue_original))
 
   # Each original id gets n new ids, one for each bootstrap iteration
-  new_ids <- purrr::map(new_data, ~.x$id)
-  new_ids <- purrr::map2(.plan$ids, new_ids, ~paste(.x, .y, sep = '->'))
+  new_ids <- purrr::map(new_data, ~gsub('Bootstrap', 'iter=', .x$id))
+  new_ids <- purrr::map(new_ids, ~gsub('Apparent', 'iter=original', .x))
+  new_ids <- purrr::map2(.plan$ids, new_ids, ~paste(.x, '→', 'bootstrap<', .y, '>', sep = ''))
 
   # Combine all the bootstrapped data
   new_data <- dplyr::bind_rows(new_data)
@@ -20,11 +21,11 @@ prep_bootstrap.analysis_plan <- function(.plan, n, inclue_original = TRUE) {
   # Assign attributes of returned object
   .plan$data <- as.list(new_data$splits)
   .plan$ids <- purrr::flatten(new_ids)
-  .plan$meta <- paste(.plan$meta, '->bootstrap:', n, sep = '')
+  .plan$meta <- paste(.plan$meta, '→bootstrap<n=', n, '>', sep = '')
 
   # Add an additional preprocessing step to evaluate the rsplit objects
   preprocess <- match.fun(.plan$prep)
-  .plan$prep <- function(data) rsample::analysis(preprocess(data))
+  .plan$prep <- function(data) rsample::analysis(preprocess(data), optional = FALSE)
   .plan
 }
 
@@ -53,11 +54,12 @@ prep_match.analysis_plan <- function(.plan, ...) {
 
   # Update meta information and ids
   match_names <- paste(auto_named_dots, sep = '/', collapse = '/')
-  .plan$meta <- paste(.plan$meta, '->match:', match_names, sep = '')
+  .plan$meta <- paste(.plan$meta, '→match<formula=', match_names, '>', sep = '')
 
-  auto_named_dots <- paste('match:', auto_named_dots, sep = '')
-  new_ids <- purrr::cross2(.plan$ids, auto_named_dots)
-  .plan$ids <- purrr::map(new_ids, ~paste(.x, collapse = '->'))
+  # Update IDs (being sure to keep the same order)
+  auto_named_dots <- paste('match<formula=', auto_named_dots, '>', sep = '')
+  new_ids <- purrr::cross2(auto_named_dots, .plan$ids)
+  .plan$ids <- purrr::map(new_ids, ~paste(.x[[2]], .x[[1]], sep = '→'))
   .plan
 }
 
@@ -87,14 +89,15 @@ prep_split_by.analysis_plan <- function(.plan, ...) {
   .plan$data <- set_names(purrr::flatten(split_data), c())
 
   # Follow the same order of steps to get ids in the correct order
-  new_ids <- purrr::cross2(.plan$ids, as.character(new_splits))
-  new_ids <- purrr::map(new_ids, ~paste(.x[[1]], '->split:', .x[[2]], sep = ''))
-  new_ids <- purrr::map2(new_ids, names_by_split, ~paste(.x, .y, sep = '='))
+  split_names <- stringr::str_replace(as.character(new_splits), '~', '')
+  new_ids <- purrr::cross2(.plan$ids, split_names)
+  new_ids <- purrr::map(new_ids, ~paste(.x[[1]], '→split<', .x[[2]], sep = ''))
+  new_ids <- purrr::map2(new_ids, names_by_split, ~paste(.x, paste(.y, '>', sep = ''), sep = '='))
   .plan$ids <- purrr::flatten(new_ids)
 
   # Add variables split by as new meta information
   splits_meta <- paste(as.character(new_splits), collapse = '/')
-  .plan$meta <- paste(.plan$meta, '->split:', splits_meta, sep = '')
+  .plan$meta <- paste(.plan$meta, '→split<', splits_meta, '>', sep = '')
   .plan
 }
 
@@ -124,9 +127,12 @@ prep_filter.analysis_plan <- function(.plan, ...) {
   .plan$data <- purrr::keep(.plan$data, keep)
   .plan$ids <- purrr::keep(.plan$ids, keep)
 
+  # Reset preprocessing
+  .plan$prep <- function(x) x
+
   full_meta <- purrr::map_chr(conditions, rlang::expr_label)
   full_meta <- paste(full_meta, collapse = '&')
-  .plan$meta <- paste(.plan$meta, '->filter:', full_meta, sep = '')
+  .plan$meta <- paste(.plan$meta, '→filter<', full_meta, '>', sep = '')
   .plan
 }
 

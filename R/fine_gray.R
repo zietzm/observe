@@ -17,16 +17,14 @@ fit_fine_gray.analysis_plan <- function(.plan, .formula, primary_outcome = NULL,
     .x[[1]], .plan$prep(.x[[2]]), primary_outcome, censoring_outcome))
 
   # Format corresponding names
-  names_first <- paste(.plan$ids, '->Fine-Gray<', sep = '')
+  names_first <- paste(.plan$ids, '→Fine-Gray<formula=', sep = '')
   names_last <- paste(names(formulae), '>', sep = '')
   model_names <- purrr::cross2(names_first, names_last)
-  model_names <- purrr::pmap(model_names, ~paste(.x, collapse = ''))
-  model_names <- purrr::flatten(model_names)
-
-  meta <- paste(.plan$meta, paste(names(formulae), collapse = '/'), sep = '->Fine-Gray:')
+  model_names <- purrr::map(model_names, ~paste(.x, collapse = ''))
+  meta <- paste(.plan$meta, '→Fine-Gray<formula=', paste(names(formulae), collapse = '/'), '>', sep = '')
 
   # Build resulting analysis_fit object
-  analysis_fit(fit_objects, model_names, meta)
+  analysis_fit(fit_objects, .plan$data, .plan$prep, model_names, meta)
 }
 
 #' @export
@@ -73,7 +71,7 @@ fit_fine_gray.character <- function(.formula, .data, primary_outcome,
 predict.fine_gray <- function(.fit, newdata) {
   # TODO: Tests here
   covariates <- model.matrix(.fit$formula, newdata)[, -1]
-  preds <- predict(fit, cov1 = covariates)
+  preds <- cmprsk::predict.crr(.fit, cov1 = covariates)
   preds <- matrix(preds, nrow(preds))
   preds[nrow(preds), -1]
 }

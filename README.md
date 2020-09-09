@@ -20,6 +20,9 @@ df %>%
   run_analysis()
 ```
 
+Ideally, this could all be evaluated lazily.
+For the time being, I'll go with eager evaluation, since it's far simpler to implement here.
+
 
 Random note for myself:
 
@@ -29,3 +32,9 @@ Objects need:
 2. is.*** 
 3. print method (format method if complicated)
 
+
+Future improvements:
+
+1. ids could be lists or character vectors, not a collapsed string
+2. lazy evaluation
+3. prep could be dataset-specific (not just one method)

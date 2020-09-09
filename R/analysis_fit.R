@@ -1,11 +1,22 @@
 #' Constructor for analysis fit
 #'
 #' @export
-analysis_fit <- function(fits, fit_ids, .meta) {
-  # TODO: Check type of inputs
+analysis_fit <- function(fits, .data, .prep, fit_ids, .meta) {
+  # TODO: Check type of inputs. len(data) == len(fits) == len(fit_ids), etc.
+  if (length(fits) != length(.data)) {
+    cnd <- rlang::warning_cnd("error", message = "fits must have the same length as .data")
+    rlang::cnd_signal(cnd)
+  }
+  if (length(fits) != length(fit_ids)) {
+    cnd <- rlang::warning_cnd("error", message = "fits must have the same length as fit_ids")
+    rlang::cnd_signal(cnd)
+  }
+
   out <- list(
     fits = fits,
-    fit_ids = fit_ids,
+    data = .data,
+    prep = .prep,
+    ids = fit_ids,
     meta = .meta
   )
   class(out) <- "analysis_fit"

@@ -21,3 +21,15 @@ process_formula <- function(formula) {
   }
   formula
 }
+
+#' Change the values of a dataframe column without changing factor levels
+#'
+#' @export
+mutate_value_only <- function(.data, column_name, value) {
+  if (is.factor(.data[[column_name]])) {
+    .data[[column_name]] <- factor(value, levels = levels(.data[[column_name]]))
+  } else {
+    .data[[column_name]] <- value
+  }
+  .data
+}
